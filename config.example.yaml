@@ -1,0 +1,7 @@
+room: 0 # 直播间号
+headers:
+  Cookie: "xxx" # B站登录态cookie
+jct: "xxx"      # Cookie 里的 JCT
+uid: 0          # 机器人账号对应的 UID
+admin:          # 管理员列表，暂时匹配的昵称，理论上应该用 UID 更好
+  - xxxx

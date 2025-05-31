@@ -1,0 +1,9 @@
+{
+	"name": "blive",
+	"main": "index.js",
+	"dependencies": {
+		"axios": "^1.9.0",
+		"log4js": "^6.9.1",
+		"tiny-bilibili-ws": "^1.0.2"
+	}
+}

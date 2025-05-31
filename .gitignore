@@ -1,0 +1,6 @@
+node_modules
+dist
+.git.bak
+*.log
+config.yaml
+db.json
