@@ -141,14 +141,14 @@ function formatGiftMessage(gift) {
     uid: data.uid,
     uname: data.uname,
     name: data.giftName,
-    num: data.num,
-    price: data.price, // 实际电池*100
-    totalCoin: data.total_coin, // 实际花的电池*100，多个的话是 *num 的
-    discountPrice: data.discount_price, // 实际电池*100
+    num: data.num,                              // 礼物数量
+    price: data.price,                          // 礼物实际电池*100
+    totalCoin: data.total_coin,                 // 用户实际花费的电池*100，如果是多个的话是原始价格*num，理论上是 originGiftPrice*num
+    discountPrice: data.discount_price,         // 礼物实际电池*100，目前看跟 price 一样
     originName: data.blind_gift?.original_gift_name || data.giftName,
     originGiftPrice: data.blind_gift?.original_gift_price || data.price, // 单个礼物的原始电池*100
-    blindGift: data.blind_gift,
-    comboTotalCoin: data.combo_total_coin || 0,
+    isBlindGift: data.blind_gift != null,       // 是否盲盒礼物
+    comboTotalCoin: data.combo_total_coin || 0, // 连击的时候会统计在当前连击组内的电池*100，其实不用管，基本用不上
   };
 }
 
@@ -176,7 +176,7 @@ function handleGiftEvent(gift) {
   queueItem.gifts.set(gift.name, currentCount + gift.num);
   
   // 3. 计算盲盒盈亏
-  if (gift.blindGift && gift.originGiftPrice != gift.price) {
+  if (gift.isBlindGift && gift.originGiftPrice != gift.price) {
     const profit = (gift.price - gift.originGiftPrice) * gift.num;
     queueItem.blindBoxProfit += profit;
   }
@@ -259,7 +259,7 @@ function startLiveMonitor() {
       if (counter > 100) suffix = 'QAQ 加油捏'
       sendMsg(room, `还要做 ${counter} 个蹲起${suffix}`, config);
     }
-    if (admin.includes(user)) {
+    if (level >= 10) {
       if (content == '机器人还活着吗') {
         let texts = [
           '今天又多活了一天真高兴！',
@@ -285,7 +285,6 @@ function startLiveMonitor() {
       'coin', data.totalCoin, 'dp', data.discountPrice,
       'p', data.price, 'op', data.originGiftPrice,
       data.originName,
-      JSON.stringify(data.blindGift),
     );
     logger.debug('原始礼物数据:', JSON.stringify(data));
     handleGiftEvent(data);
