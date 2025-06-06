@@ -3,7 +3,7 @@ import axios from 'axios';
 import log4js from 'log4js';
 import fs from 'fs';
 import yaml from 'js-yaml';
-import { Database } from './db.mjs';
+import { Database } from './blive.mjs';
 
 var config = {
   room: 0,
@@ -198,6 +198,9 @@ async function statGiftCounter(item) {
   if (!counter) counter = 0;
   if (item.blindBoxProfit !== 0) {
     counter += -1 * Math.floor(item.blindBoxProfit / 100 / 10);
+    if (counter < 0) {
+      counter = 0;
+    }
   }
   db.set('counter', counter);
 }
@@ -225,7 +228,8 @@ async function sendAggregatedGift(item) {
     if (item.blindBoxProfit !== 0) {
       const profitType = item.blindBoxProfit > 0 ? '赚' : '亏';
       message += `，盲盒${profitType}${Math.abs(item.blindBoxProfit)/100}电池`;
-      message += `，蹲起${db.get('counter') || 0}个(${-1*Math.floor(item.blindBoxProfit/100/10)})`;
+      let diff = -1 * Math.floor(item.blindBoxProfit / 100 / 10);
+      message += `，蹲起${db.get('counter') || 0}个(${diff>=0?"+":""}${diff})`;
     }
     
     // 4. 发送消息
@@ -253,28 +257,48 @@ function startLiveMonitor() {
     const content = info[1];
     const level = info[3][0];
     logger.info(`弹幕: ${user}: ${content}`);
-    if (level >= 10 && content == '还要做多少蹲起') {
-      let counter = db.get('counter') || 0
-      let suffix = '';
-      if (counter > 100) suffix = 'QAQ 加油捏'
-      sendMsg(room, `还要做 ${counter} 个蹲起${suffix}`, config);
+    if (admin.includes(user)) {
+      let m = content.match(/^蹲起\s*([\+\-\*\/＋－×÷=＝])\s*(\d+)$/);
+      if (m) {
+        const op = m[1];
+        const val = parseInt(m[2]);
+        let newCounter = db.get('counter') || 0;
+        if (op == '+' || op == '＋') {
+          newCounter += val;
+        } else if (op == '-' || op == '－') {
+          newCounter -= val;
+          if (newCounter < 0) newCounter = 0;
+        } else if (op == '*' || op == '×') {
+          newCounter *= val;
+        } else if (op == '/' || op == '÷') {
+          if (val == 0) {
+            sendMsg(room, '？这对吗老师', config);
+            return;
+          }
+          newCounter = Math.floor(newCounter / val);
+        } else if (op == '＝' || op == '=') {
+          newCounter = val;
+        }
+        db.set('counter', newCounter);
+        sendMsg(room, `已设置蹲起计数器为 ${newCounter}`, config);
+      }
     }
     if (level >= 10) {
       if (content == '机器人还活着吗') {
         let texts = [
           '今天又多活了一天真高兴！',
-          '到！',
           '在的捏 ⌯\'▾\'⌯',
           '咕噜咕噜咕噜咕噜（溺水声）',
-          '你爷爷在此！',
+          '你爷爷来辣！',
         ];
         sendMsg(room, texts[Math.floor(Math.random()*texts.length)], config);
-      }
-      let m = content.match(/^蹲起=(\d+)$/);
-      if (m) {
-        const newCounter = parseInt(m[1]);
-        db.set('counter', newCounter);
-        sendMsg(room, `已设置蹲起计数器为 ${newCounter}`, config);
+      } else if (content.includes('蹲起')) {
+        if (content.match(/(?:还要|还剩|剩下|剩余|需要做|还需|还有|差|还要做|需要完成|还有多少|剩下多少).*?(?:多少|几)(?:\s*[个下]?)?\s*蹲起|蹲起.*?(?:还要|还剩|剩下|剩余|需要做|还需|还有|差|还要做|需要完成|还有多少|剩下多少).*?(?:多少|几)(?:\s*[个下]?)?/i)) {
+          let counter = db.get('counter') || 0
+          let suffix = '';
+          if (counter > 100) suffix = '~加油捏！'
+          sendMsg(room, `还要做 ${counter} 个蹲起${suffix}`, config);
+        }
       }
     }
   });
