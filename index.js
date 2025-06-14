@@ -197,7 +197,7 @@ async function statGiftCounter(item) {
   let counter = db.get('counter')
   if (!counter) counter = 0;
   if (item.blindBoxProfit !== 0) {
-    counter += -1 * Math.floor(item.blindBoxProfit / 100 / 10);
+    counter += -1 * parseInt(item.blindBoxProfit / 100 / 10);
     if (counter < 0) {
       counter = 0;
     }
@@ -228,7 +228,7 @@ async function sendAggregatedGift(item) {
     if (item.blindBoxProfit !== 0) {
       const profitType = item.blindBoxProfit > 0 ? '赚' : '亏';
       message += `，盲盒${profitType}${Math.abs(item.blindBoxProfit)/100}电池`;
-      let diff = -1 * Math.floor(item.blindBoxProfit / 100 / 10);
+      let diff = -1 * parseInt(item.blindBoxProfit / 100 / 10);
       message += `，蹲起${db.get('counter') || 0}个(${diff>=0?"+":""}${diff})`;
     }
     
